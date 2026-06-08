@@ -1,4 +1,4 @@
-const CACHE_NAME = "dompetku-v1";
+const CACHE_NAME = "dompetku-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -18,6 +18,10 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+});
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -29,14 +33,28 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+    caches.open(CACHE_NAME).then(async (cache) => {
+      if (event.request.mode === "navigate") {
+        try {
+          const response = await fetch(event.request);
+          if (response.ok) cache.put("./index.html", response.clone());
+          return response;
+        } catch (error) {
+          return (await caches.match(event.request)) || (await caches.match("./index.html"));
+        }
+      }
+
+      try {
+        const response = await fetch(event.request);
+        if (response.ok) cache.put(event.request, response.clone());
         return response;
-      });
+      } catch (error) {
+        return (await caches.match(event.request)) || new Response("", { status: 404 });
+      }
     })
   );
 });

@@ -1,34 +1,74 @@
 :root {
   color-scheme: light dark;
-  --bg: #f7f7f2;
+  --bg: #fff6fa;
   --surface: #ffffff;
-  --surface-soft: #eef2ed;
-  --text: #17201c;
-  --muted: #6c746f;
-  --line: #dfe4dd;
+  --surface-soft: #fdeaf2;
+  --text: #261821;
+  --muted: #836877;
+  --line: #f1ccd9;
   --income: #187a5d;
   --expense: #b43f3f;
-  --accent: #256bff;
-  --accent-dark: #1645b8;
-  --warning: #b76815;
-  --shadow: 0 18px 50px rgba(21, 26, 23, 0.12);
+  --accent: #ff7db8;
+  --accent-dark: #c82471;
+  --accent-soft: #ffe3ef;
+  --bg-mid: #fff0f6;
+  --warning: #b7652a;
+  --shadow: 0 18px 50px rgba(132, 41, 82, 0.14);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #121613;
-    --surface: #1d241f;
-    --surface-soft: #263029;
-    --text: #f3f5ef;
-    --muted: #aab2ad;
-    --line: #344038;
+    --bg: #171016;
+    --surface: #241821;
+    --surface-soft: #352232;
+    --text: #fff4f9;
+    --muted: #d7b8c7;
+    --line: #4a2b3f;
     --income: #69d0a8;
     --expense: #ff8c87;
-    --accent: #82a7ff;
-    --accent-dark: #b9ccff;
-    --warning: #f1b15c;
-    --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    --accent: #ff94c9;
+    --accent-dark: #ffc5df;
+    --accent-soft: #44263a;
+    --bg-mid: #20141d;
+    --warning: #f0af64;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.46);
   }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #fff6fa;
+  --surface: #ffffff;
+  --surface-soft: #fdeaf2;
+  --text: #261821;
+  --muted: #836877;
+  --line: #f1ccd9;
+  --income: #187a5d;
+  --expense: #b43f3f;
+  --accent: #ff7db8;
+  --accent-dark: #c82471;
+  --accent-soft: #ffe3ef;
+  --bg-mid: #fff0f6;
+  --warning: #b7652a;
+  --shadow: 0 18px 50px rgba(132, 41, 82, 0.14);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #171016;
+  --surface: #241821;
+  --surface-soft: #352232;
+  --text: #fff4f9;
+  --muted: #d7b8c7;
+  --line: #4a2b3f;
+  --income: #69d0a8;
+  --expense: #ff8c87;
+  --accent: #ff94c9;
+  --accent-dark: #ffc5df;
+  --accent-soft: #44263a;
+  --bg-mid: #20141d;
+  --warning: #f0af64;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.46);
 }
 
 * {
@@ -44,8 +84,8 @@ body {
   min-height: 100%;
   margin: 0;
   background:
-    radial-gradient(circle at 20% -10%, rgba(37, 107, 255, 0.12), transparent 28rem),
-    linear-gradient(180deg, var(--bg), var(--surface-soft));
+    radial-gradient(circle at 20% -10%, rgba(255, 125, 184, 0.2), transparent 28rem),
+    linear-gradient(180deg, var(--bg), var(--bg-mid) 62%, var(--surface-soft));
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0;
@@ -59,6 +99,37 @@ select {
 
 button {
   color: inherit;
+}
+
+@keyframes viewSlideIn {
+  from {
+    opacity: 0;
+    transform: translate3d(var(--view-shift, 18px), 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes itemLiftIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetRise {
+  from {
+    transform: translateY(24px);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .app-shell {
@@ -102,11 +173,26 @@ button {
 .ghost-button,
 .primary-button,
 .danger-button,
-.segment {
+.segment,
+.tiny-action,
+.transaction-item,
+.category-item {
   min-height: 44px;
   border: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 260ms ease,
+    color 260ms ease,
+    border-color 260ms ease,
+    opacity 260ms ease;
+  will-change: transform;
+}
+
+.tap-pop {
+  transform: scale(0.96);
 }
 
 .icon-button {
@@ -122,6 +208,15 @@ button {
 
 .view.active {
   display: block;
+  animation: viewSlideIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html[data-nav-dir="back"] .view.active {
+  --view-shift: -18px;
+}
+
+html[data-nav-dir="forward"] .view.active {
+  --view-shift: 18px;
 }
 
 .balance-panel {
@@ -130,6 +225,7 @@ button {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  animation: itemLiftIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .balance-panel p {
@@ -195,6 +291,19 @@ b {
   font-weight: 800;
 }
 
+.quick-card:active,
+.icon-button:active,
+.text-button:active,
+.ghost-button:active,
+.primary-button:active,
+.danger-button:active,
+.segment:active,
+.tiny-action:active,
+.transaction-item:active,
+.category-item:active {
+  transform: scale(0.97);
+}
+
 .quick-card span {
   display: grid;
   width: 34px;
@@ -202,7 +311,7 @@ b {
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
-  background: var(--surface-soft);
+  background: var(--accent-soft);
   color: var(--accent);
   font-size: 22px;
 }
@@ -254,6 +363,7 @@ b {
   align-items: center;
   gap: 10px;
   padding: 12px;
+  animation: itemLiftIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .category-item {
@@ -337,12 +447,13 @@ select {
 input:focus,
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(37, 107, 255, 0.16);
+  box-shadow: 0 0 0 3px rgba(255, 125, 184, 0.2);
 }
 
 .budget-item,
 .chart-item {
   padding: 14px;
+  animation: itemLiftIn 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .budget-top,
@@ -374,7 +485,9 @@ select:focus {
   height: 100%;
   width: var(--fill, 0%);
   border-radius: inherit;
-  background: var(--income);
+  background: linear-gradient(90deg, #ff9acb, var(--accent));
+  transform-origin: left center;
+  animation: fillBar 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .progress.danger span {
@@ -432,6 +545,23 @@ select:focus {
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
+  position: relative;
+}
+
+.tab::after {
+  position: absolute;
+  right: 16px;
+  bottom: 2px;
+  left: 16px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  content: "";
+  opacity: 0;
+  transform: scaleX(0.4);
+  transition:
+    opacity 260ms ease,
+    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .tab span {
@@ -443,13 +573,18 @@ select:focus {
   color: var(--accent-dark);
 }
 
+.tab.active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
 .add-tab span {
   display: grid;
   width: 36px;
   height: 36px;
   place-items: center;
   border-radius: 50%;
-  background: var(--accent);
+  background: linear-gradient(180deg, #ff9acb, var(--accent));
   color: #fff;
 }
 
@@ -460,6 +595,16 @@ select:focus {
   display: grid;
   align-items: end;
   background: rgba(0, 0, 0, 0.34);
+  opacity: 0;
+  transition: opacity 320ms ease;
+}
+
+.sheet-backdrop.is-open {
+  opacity: 1;
+}
+
+.sheet-backdrop.is-closing {
+  opacity: 0;
 }
 
 .bottom-sheet {
@@ -473,6 +618,17 @@ select:focus {
   border-radius: 20px 20px 0 0;
   background: var(--surface);
   box-shadow: var(--shadow);
+  transform: translateY(28px);
+  transition: transform 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sheet-backdrop.is-open .bottom-sheet {
+  transform: translateY(0);
+  animation: sheetRise 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.sheet-backdrop.is-closing .bottom-sheet {
+  transform: translateY(28px);
 }
 
 .sheet-handle {
@@ -524,7 +680,7 @@ select:focus {
 }
 
 .primary-button {
-  background: var(--accent);
+  background: linear-gradient(180deg, #ff9acb, var(--accent));
   color: #fff;
 }
 
@@ -553,6 +709,7 @@ select:focus {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  animation: itemLiftIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .install-nudge p {
@@ -564,6 +721,40 @@ select:focus {
 
 [hidden] {
   display: none !important;
+}
+
+@keyframes fillBar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  .tap-pop,
+  .quick-card:active,
+  .icon-button:active,
+  .text-button:active,
+  .ghost-button:active,
+  .primary-button:active,
+  .danger-button:active,
+  .segment:active,
+  .tiny-action:active,
+  .transaction-item:active,
+  .category-item:active {
+    transform: none;
+  }
 }
 
 @media (max-width: 390px) {

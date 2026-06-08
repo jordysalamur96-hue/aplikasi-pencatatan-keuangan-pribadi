@@ -1,6 +1,8 @@
 const DB_NAME = "dompetku-db";
 const DB_VERSION = 1;
 const STORE_NAMES = ["transactions", "categories", "budgets", "settings"];
+const SHEET_ANIMATION_MS = 340;
+const VIEW_ORDER = ["home", "history", "budget", "reports"];
 
 const defaultCategories = [
   { id: "food", name: "Makan", emoji: "🍽️", type: "expense", isDefault: true },
@@ -18,7 +20,7 @@ const state = {
   transactions: [],
   categories: [],
   budgets: [],
-  settings: { monthStart: 1 },
+  settings: { monthStart: 1, theme: "auto" },
   activeView: "home",
   transactionType: "expense"
 };
@@ -61,6 +63,7 @@ const els = {
   categoryTypeInput: document.getElementById("category-type-input"),
   settingsSheet: document.getElementById("settings-sheet"),
   monthStartInput: document.getElementById("month-start-input"),
+  themeInput: document.getElementById("theme-input"),
   installNudge: document.getElementById("install-nudge")
 };
 
@@ -137,6 +140,51 @@ function parseAmount(value) {
 function formatAmountInput(value) {
   const amount = parseAmount(value);
   return amount ? new Intl.NumberFormat("id-ID").format(amount) : "";
+}
+
+function getSystemTheme() {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function applyTheme(theme = "auto") {
+  const selectedTheme = theme === "light" || theme === "dark" ? theme : "auto";
+  const resolvedTheme = selectedTheme === "auto" ? getSystemTheme() : selectedTheme;
+  const themeColor = resolvedTheme === "dark" ? "#171016" : "#fff6fa";
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+
+  if (selectedTheme === "auto") {
+    document.documentElement.removeAttribute("data-theme");
+    try {
+      localStorage.removeItem("dompetku-theme");
+    } catch (error) {}
+  } else {
+    document.documentElement.dataset.theme = selectedTheme;
+    try {
+      localStorage.setItem("dompetku-theme", selectedTheme);
+    } catch (error) {}
+  }
+
+  if (metaTheme) metaTheme.setAttribute("content", themeColor);
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function openSheet(sheet) {
+  sheet.hidden = false;
+  sheet.classList.remove("is-closing");
+  requestAnimationFrame(() => sheet.classList.add("is-open"));
+}
+
+function closeSheet(sheet, afterClose) {
+  sheet.classList.remove("is-open");
+  sheet.classList.add("is-closing");
+  window.setTimeout(() => {
+    sheet.hidden = true;
+    sheet.classList.remove("is-closing");
+    if (afterClose) afterClose();
+  }, prefersReducedMotion() ? 1 : SHEET_ANIMATION_MS);
 }
 
 function getCategory(id) {
@@ -345,16 +393,23 @@ async function refreshData() {
   state.categories = await getAll("categories");
   state.budgets = await getAll("budgets");
   const settings = await getAll("settings");
-  state.settings = { monthStart: 1, ...Object.fromEntries(settings.map((item) => [item.key, item.value])) };
+  state.settings = { monthStart: 1, theme: "auto", ...Object.fromEntries(settings.map((item) => [item.key, item.value])) };
   if (!state.categories.length) {
     for (const category of defaultCategories) await put("categories", category);
     state.categories = await getAll("categories");
   }
   els.monthStartInput.value = state.settings.monthStart || 1;
+  els.themeInput.value = state.settings.theme || "auto";
+  applyTheme(state.settings.theme);
   renderAll();
 }
 
 function setView(viewName) {
+  const currentIndex = VIEW_ORDER.indexOf(state.activeView);
+  const nextIndex = VIEW_ORDER.indexOf(viewName);
+  if (currentIndex >= 0 && nextIndex >= 0) {
+    document.documentElement.dataset.navDir = nextIndex >= currentIndex ? "forward" : "back";
+  }
   state.activeView = viewName;
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.dataset.view === viewName));
   document.querySelectorAll(".tab[data-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === viewName));
@@ -379,26 +434,28 @@ function openTransactionSheet(item = null, forcedType = "expense") {
   els.dateInput.value = item?.date || today();
   renderCategoryInputs();
   els.categoryInput.value = item?.categoryId || categoriesForType(state.transactionType)[0]?.id || "";
-  els.transactionSheet.hidden = false;
+  openSheet(els.transactionSheet);
   setTimeout(() => els.amountInput.focus(), 80);
 }
 
 function closeTransactionSheet() {
-  els.transactionSheet.hidden = true;
-  els.transactionForm.reset();
-  els.transactionId.value = "";
-  els.deleteTransaction.hidden = true;
+  closeSheet(els.transactionSheet, () => {
+    els.transactionForm.reset();
+    els.transactionId.value = "";
+    els.deleteTransaction.hidden = true;
+  });
 }
 
 function openCategorySheet() {
-  els.categorySheet.hidden = false;
   renderCategoryManager();
+  openSheet(els.categorySheet);
 }
 
 function closeCategorySheet() {
-  els.categorySheet.hidden = true;
-  els.categoryForm.reset();
-  els.categoryIdInput.value = "";
+  closeSheet(els.categorySheet, () => {
+    els.categoryForm.reset();
+    els.categoryIdInput.value = "";
+  });
 }
 
 async function saveTransaction(event) {
@@ -500,6 +557,15 @@ async function importJson(file) {
 }
 
 function bindEvents() {
+  document.addEventListener("pointerdown", (event) => {
+    const target = event.target.closest("button, .transaction-item, .category-item, .quick-card");
+    if (!target || target.disabled || prefersReducedMotion()) return;
+    target.classList.remove("tap-pop");
+    void target.offsetWidth;
+    target.classList.add("tap-pop");
+    window.setTimeout(() => target.classList.remove("tap-pop"), 220);
+  }, { passive: true });
+
   document.querySelectorAll("[data-tab]").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.tab));
   });
@@ -553,12 +619,22 @@ function bindEvents() {
     if (deleteId) deleteCategory(deleteId);
   });
   document.getElementById("settings-button").addEventListener("click", () => {
-    els.settingsSheet.hidden = false;
+    openSheet(els.settingsSheet);
+  });
+  els.themeInput.addEventListener("change", async () => {
+    const theme = els.themeInput.value;
+    const monthStart = Math.max(1, Math.min(28, Number(els.monthStartInput.value || 1)));
+    await put("settings", { key: "monthStart", value: monthStart });
+    await put("settings", { key: "theme", value: theme });
+    state.settings.monthStart = monthStart;
+    state.settings.theme = theme;
+    applyTheme(theme);
+    closeSheet(els.settingsSheet);
   });
   document.getElementById("close-settings").addEventListener("click", async () => {
     const monthStart = Math.max(1, Math.min(28, Number(els.monthStartInput.value || 1)));
     await put("settings", { key: "monthStart", value: monthStart });
-    els.settingsSheet.hidden = true;
+    closeSheet(els.settingsSheet);
     await refreshData();
   });
   document.getElementById("export-json").addEventListener("click", exportJson);
@@ -570,6 +646,15 @@ function bindEvents() {
     localStorage.setItem("installNudgeDismissed", "yes");
     els.installNudge.hidden = true;
   });
+  const systemThemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  const refreshAutoTheme = () => {
+    if ((state.settings.theme || "auto") === "auto") applyTheme("auto");
+  };
+  if (systemThemeQuery.addEventListener) {
+    systemThemeQuery.addEventListener("change", refreshAutoTheme);
+  } else {
+    systemThemeQuery.addListener(refreshAutoTheme);
+  }
 }
 
 function maybeShowInstallNudge() {
@@ -582,7 +667,27 @@ function maybeShowInstallNudge() {
 async function registerServiceWorker() {
   if ("serviceWorker" in navigator) {
     try {
-      await navigator.serviceWorker.register("./sw.js");
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+
+      const registration = await navigator.serviceWorker.register("./sw.js");
+      if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        if (!worker) return;
+        worker.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) {
+            worker.postMessage({ type: "SKIP_WAITING" });
+          }
+        });
+      });
+
+      setTimeout(() => registration.update(), 1200);
     } catch (error) {
       console.warn("Service worker belum aktif:", error);
     }
