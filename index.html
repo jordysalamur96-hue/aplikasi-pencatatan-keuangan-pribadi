@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f7f2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Dompetku" />
+    <meta name="description" content="Aplikasi pencatatan keuangan pribadi offline-first untuk iPhone." />
+    <title>Dompetku</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+    <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <header class="top-bar">
+        <div>
+          <p class="eyebrow" id="current-period">Bulan ini</p>
+          <h1>Dompetku</h1>
+        </div>
+        <button class="icon-button" id="settings-button" type="button" aria-label="Buka pengaturan">...</button>
+      </header>
+
+      <main class="view-stack" aria-live="polite">
+        <section class="view active" data-view="home">
+          <section class="balance-panel">
+            <p>Saldo Bersih</p>
+            <strong id="balance-value">Rp0</strong>
+            <div class="summary-grid">
+              <span><small>Pemasukan</small><b id="income-value">Rp0</b></span>
+              <span><small>Pengeluaran</small><b id="expense-value">Rp0</b></span>
+            </div>
+          </section>
+
+          <section class="quick-row">
+            <button class="quick-card" type="button" data-quick-type="expense">
+              <span>-</span>
+              Catat pengeluaran
+            </button>
+            <button class="quick-card" type="button" data-quick-type="income">
+              <span>+</span>
+              Catat pemasukan
+            </button>
+          </section>
+
+          <section class="section-head">
+            <h2>Transaksi Terbaru</h2>
+            <button class="text-button" type="button" data-go="history">Lihat semua</button>
+          </section>
+          <div id="recent-list" class="item-list empty-ready"></div>
+        </section>
+
+        <section class="view" data-view="history">
+          <div class="filter-row">
+            <label>
+              Bulan
+              <input id="history-month" type="month" />
+            </label>
+            <label>
+              Kategori
+              <select id="history-category"></select>
+            </label>
+          </div>
+          <div id="history-list" class="item-list empty-ready"></div>
+        </section>
+
+        <section class="view" data-view="budget">
+          <section class="section-head">
+            <h2>Anggaran Bulanan</h2>
+            <button class="text-button" id="manage-categories-button" type="button">Kategori</button>
+          </section>
+          <div id="budget-alerts" class="notice-stack"></div>
+          <div id="budget-list" class="budget-list"></div>
+        </section>
+
+        <section class="view" data-view="reports">
+          <section class="report-strip">
+            <span><small>Bulan ini</small><b id="report-expense-now">Rp0</b></span>
+            <span><small>Bulan lalu</small><b id="report-expense-prev">Rp0</b></span>
+          </section>
+          <section class="section-head">
+            <h2>Pengeluaran per Kategori</h2>
+          </section>
+          <div id="category-chart" class="chart-list"></div>
+        </section>
+      </main>
+
+      <nav class="tab-bar" aria-label="Navigasi utama">
+        <button class="tab active" type="button" data-tab="home" aria-label="Beranda">
+          <span>⌂</span><small>Beranda</small>
+        </button>
+        <button class="tab add-tab" id="add-button" type="button" aria-label="Tambah transaksi">
+          <span>+</span><small>Tambah</small>
+        </button>
+        <button class="tab" type="button" data-tab="history" aria-label="Riwayat">
+          <span>≡</span><small>Riwayat</small>
+        </button>
+        <button class="tab" type="button" data-tab="budget" aria-label="Anggaran">
+          <span>◎</span><small>Anggaran</small>
+        </button>
+        <button class="tab" type="button" data-tab="reports" aria-label="Laporan">
+          <span>▥</span><small>Laporan</small>
+        </button>
+      </nav>
+    </div>
+
+    <div class="install-nudge" id="install-nudge" hidden>
+      <p>Untuk rasa seperti aplikasi iPhone: buka menu Bagikan Safari, lalu pilih Add to Home Screen.</p>
+      <button class="icon-button" id="install-dismiss" type="button" aria-label="Tutup panduan">x</button>
+    </div>
+
+    <div class="sheet-backdrop" id="transaction-sheet" hidden>
+      <form class="bottom-sheet" id="transaction-form">
+        <div class="sheet-handle"></div>
+        <h2 id="sheet-title">Tambah Transaksi</h2>
+        <input id="transaction-id" type="hidden" />
+
+        <div class="segmented" role="group" aria-label="Jenis transaksi">
+          <button class="segment active" type="button" data-type-choice="expense">Pengeluaran</button>
+          <button class="segment" type="button" data-type-choice="income">Pemasukan</button>
+        </div>
+
+        <label>
+          Nominal
+          <input id="amount-input" inputmode="numeric" autocomplete="off" placeholder="0" required />
+        </label>
+
+        <label>
+          Kategori
+          <select id="category-input" required></select>
+        </label>
+
+        <label>
+          Catatan
+          <input id="note-input" maxlength="80" placeholder="Opsional" />
+        </label>
+
+        <label>
+          Tanggal
+          <input id="date-input" type="date" required />
+        </label>
+
+        <div class="sheet-actions">
+          <button class="danger-button" id="delete-transaction" type="button" hidden>Hapus</button>
+          <button class="ghost-button" id="cancel-transaction" type="button">Batal</button>
+          <button class="primary-button" type="submit">Simpan</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="sheet-backdrop" id="category-sheet" hidden>
+      <form class="bottom-sheet" id="category-form">
+        <div class="sheet-handle"></div>
+        <h2>Kelola Kategori</h2>
+        <input id="category-id-input" type="hidden" />
+        <label>
+          Nama kategori
+          <input id="category-name-input" maxlength="30" required />
+        </label>
+        <label>
+          Ikon emoji
+          <input id="category-emoji-input" maxlength="4" placeholder="💸" required />
+        </label>
+        <label>
+          Dipakai untuk
+          <select id="category-type-input">
+            <option value="expense">Pengeluaran</option>
+            <option value="income">Pemasukan</option>
+            <option value="both">Keduanya</option>
+          </select>
+        </label>
+        <div class="sheet-actions">
+          <button class="ghost-button" id="cancel-category" type="button">Batal</button>
+          <button class="primary-button" type="submit">Simpan</button>
+        </div>
+        <div id="category-list" class="category-list"></div>
+      </form>
+    </div>
+
+    <div class="sheet-backdrop" id="settings-sheet" hidden>
+      <section class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <h2>Pengaturan</h2>
+        <label>
+          Awal bulan keuangan
+          <input id="month-start-input" type="number" min="1" max="28" />
+        </label>
+        <div class="settings-actions">
+          <button class="ghost-button" id="export-json" type="button">Backup JSON</button>
+          <label class="ghost-button file-button">
+            Restore JSON
+            <input id="import-json" type="file" accept="application/json" />
+          </label>
+        </div>
+        <button class="primary-button" id="close-settings" type="button">Selesai</button>
+      </section>
+    </div>
+
+    <template id="empty-template">
+      <div class="empty-state">
+        <strong>Belum ada data</strong>
+        <p>Mulai dari satu transaksi kecil dulu.</p>
+      </div>
+    </template>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

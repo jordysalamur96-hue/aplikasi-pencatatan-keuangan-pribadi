@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Dompetku">
+  <rect width="512" height="512" rx="96" fill="#256bff"/>
+  <path d="M128 170c0-32 26-58 58-58h128c32 0 58 26 58 58v18h-244v-18z" fill="#dce8ff"/>
+  <path d="M96 198c0-24 19-43 43-43h234c24 0 43 19 43 43v154c0 24-19 43-43 43h-234c-24 0-43-19-43-43V198z" fill="#ffffff"/>
+  <path d="M320 252h96v88h-96c-24 0-44-20-44-44s20-44 44-44z" fill="#dce8ff"/>
+  <circle cx="330" cy="296" r="15" fill="#256bff"/>
+  <path d="M158 248h98v28h-98v-28zm0 58h142v28H158v-28z" fill="#17201c"/>
+</svg>
