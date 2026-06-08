@@ -89,6 +89,8 @@ body {
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0;
+  /* Cegah text-size-adjust iOS saat rotate */
+  -webkit-text-size-adjust: 100%;
 }
 
 button,
@@ -101,10 +103,12 @@ button {
   color: inherit;
 }
 
+/* ─── Animasi ─────────────────────────────────────────────── */
+
 @keyframes viewSlideIn {
   from {
     opacity: 0;
-    transform: translate3d(var(--view-shift, 18px), 10px, 0);
+    transform: translate3d(var(--view-shift, 20px), 6px, 0);
   }
   to {
     opacity: 1;
@@ -112,10 +116,15 @@ button {
   }
 }
 
+@keyframes viewFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
 @keyframes itemLiftIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -125,12 +134,21 @@ button {
 
 @keyframes sheetRise {
   from {
-    transform: translateY(24px);
+    opacity: 0.6;
+    transform: translateY(32px);
   }
   to {
+    opacity: 1;
     transform: translateY(0);
   }
 }
+
+@keyframes fillBar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* ─── App shell ───────────────────────────────────────────── */
 
 .app-shell {
   width: min(100%, 520px);
@@ -138,6 +156,8 @@ button {
   margin: 0 auto;
   padding: calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 92px);
 }
+
+/* ─── Top bar ─────────────────────────────────────────────── */
 
 .top-bar {
   display: flex;
@@ -166,6 +186,8 @@ button {
   font-weight: 700;
 }
 
+/* ─── Tombol & elemen interaktif ──────────────────────────── */
+
 .icon-button,
 .tab,
 .quick-card,
@@ -181,18 +203,36 @@ button {
   border: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  /* GPU-accelerated transition — hanya properti yang benar-benar berubah */
   transition:
-    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 260ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 260ms ease,
-    color 260ms ease,
-    border-color 260ms ease,
-    opacity 260ms ease;
+    transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    opacity 180ms ease;
   will-change: transform;
 }
 
+/* Tap feedback: scale ringan, tidak pakai JS offsetWidth trick */
+.icon-button:active,
+.quick-card:active,
+.text-button:active,
+.ghost-button:active,
+.primary-button:active,
+.danger-button:active,
+.segment:active,
+.tiny-action:active,
+.transaction-item:active,
+.category-item:active {
+  transform: scale(0.97);
+  transition-duration: 80ms;
+}
+
+/* tap-pop dari JS tetap didukung tapi lebih halus */
 .tap-pop {
   transform: scale(0.96);
+  transition-duration: 80ms !important;
 }
 
 .icon-button {
@@ -202,30 +242,34 @@ button {
   box-shadow: inset 0 0 0 1px var(--line);
 }
 
+/* ─── View ────────────────────────────────────────────────── */
+
 .view {
   display: none;
 }
 
 .view.active {
   display: block;
-  animation: viewSlideIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: viewSlideIn 320ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 html[data-nav-dir="back"] .view.active {
-  --view-shift: -18px;
+  --view-shift: -20px;
 }
 
 html[data-nav-dir="forward"] .view.active {
-  --view-shift: 18px;
+  --view-shift: 20px;
 }
+
+/* ─── Balance panel ───────────────────────────────────────── */
 
 .balance-panel {
   padding: 22px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  animation: itemLiftIn 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: itemLiftIn 380ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 .balance-panel p {
@@ -237,23 +281,63 @@ html[data-nav-dir="forward"] .view.active {
 .balance-panel strong {
   display: block;
   overflow-wrap: anywhere;
-  font-size: clamp(32px, 9vw, 44px);
+  font-size: clamp(28px, 8vw, 44px);
   line-height: 1.08;
 }
 
-.summary-grid,
-.quick-row,
-.report-strip,
-.filter-row,
-.settings-actions {
+/* ─── Grid layouts ────────────────────────────────────────── */
+
+.summary-grid {
+  display: grid;
+  /* minimum 140px tiap kolom — tidak akan pernah terlalu sempit */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.quick-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 14px 0 22px;
+}
+
+.report-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+/* Filter row: dipakai di tempat lain (settings, dll) */
+.filter-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+/* Filter stack: khusus Riwayat — Bulan & Kategori sejajar 2 kolom */
+.filter-stack {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  margin-bottom: 14px;
 }
 
-.summary-grid {
-  margin-top: 18px;
+/* Pastikan input bulan tidak melar */
+.filter-stack input[type="month"] {
+  width: 100%;
+  min-width: 0;
 }
+
+.settings-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+/* ─── Summary & report tiles ──────────────────────────────── */
 
 .summary-grid span,
 .report-strip span {
@@ -274,9 +358,7 @@ b {
   overflow-wrap: anywhere;
 }
 
-.quick-row {
-  margin: 14px 0 22px;
-}
+/* ─── Quick cards ─────────────────────────────────────────── */
 
 .quick-card {
   display: flex;
@@ -284,24 +366,11 @@ b {
   gap: 10px;
   min-width: 0;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
   text-align: left;
   font-weight: 800;
-}
-
-.quick-card:active,
-.icon-button:active,
-.text-button:active,
-.ghost-button:active,
-.primary-button:active,
-.danger-button:active,
-.segment:active,
-.tiny-action:active,
-.transaction-item:active,
-.category-item:active {
-  transform: scale(0.97);
 }
 
 .quick-card span {
@@ -315,6 +384,8 @@ b {
   color: var(--accent);
   font-size: 22px;
 }
+
+/* ─── Section head ────────────────────────────────────────── */
 
 .section-head {
   display: flex;
@@ -336,6 +407,8 @@ b {
   font-weight: 800;
 }
 
+/* ─── Lists ───────────────────────────────────────────────── */
+
 .item-list,
 .budget-list,
 .chart-list,
@@ -352,7 +425,7 @@ b {
 .notice,
 .empty-state {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
 }
 
@@ -363,8 +436,26 @@ b {
   align-items: center;
   gap: 10px;
   padding: 12px;
-  animation: itemLiftIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+
+/* Animasi item dengan stagger */
+.transaction-item:nth-child(1)  { animation: itemLiftIn 280ms 0ms   cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.transaction-item:nth-child(2)  { animation: itemLiftIn 280ms 40ms  cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.transaction-item:nth-child(3)  { animation: itemLiftIn 280ms 80ms  cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.transaction-item:nth-child(4)  { animation: itemLiftIn 280ms 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.transaction-item:nth-child(5)  { animation: itemLiftIn 280ms 160ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.transaction-item:nth-child(n+6){ animation: itemLiftIn 280ms 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+.budget-item:nth-child(1)  { animation: itemLiftIn 280ms 0ms   cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.budget-item:nth-child(2)  { animation: itemLiftIn 280ms 40ms  cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.budget-item:nth-child(3)  { animation: itemLiftIn 280ms 80ms  cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.budget-item:nth-child(4)  { animation: itemLiftIn 280ms 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.budget-item:nth-child(n+5){ animation: itemLiftIn 280ms 160ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+
+.chart-item:nth-child(1)  { animation: itemLiftIn 280ms 0ms   cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.chart-item:nth-child(2)  { animation: itemLiftIn 280ms 40ms  cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.chart-item:nth-child(3)  { animation: itemLiftIn 280ms 80ms  cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
+.chart-item:nth-child(n+4){ animation: itemLiftIn 280ms 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both; }
 
 .category-item {
   grid-template-columns: 42px minmax(0, 1fr) auto auto;
@@ -401,6 +492,9 @@ b {
 .amount {
   font-weight: 900;
   text-align: right;
+  /* Supaya angka panjang tidak overflow keluar kolom */
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(13px, 3.5vw, 15px);
 }
 
 .amount.income {
@@ -420,9 +514,7 @@ b {
   font-weight: 900;
 }
 
-.filter-row {
-  margin-bottom: 14px;
-}
+/* ─── Form & input ────────────────────────────────────────── */
 
 label {
   display: grid;
@@ -442,6 +534,8 @@ select {
   color: var(--text);
   padding: 0 12px;
   outline: none;
+  /* Cegah zoom-in iOS saat focus (min font size 16px) */
+  font-size: max(16px, 1em);
 }
 
 input:focus,
@@ -450,10 +544,11 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(255, 125, 184, 0.2);
 }
 
+/* ─── Budget items ────────────────────────────────────────── */
+
 .budget-item,
 .chart-item {
   padding: 14px;
-  animation: itemLiftIn 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .budget-top,
@@ -471,6 +566,8 @@ select:focus {
   margin-top: 12px;
 }
 
+/* ─── Progress bar ────────────────────────────────────────── */
+
 .progress,
 .bar-track {
   height: 10px;
@@ -487,7 +584,8 @@ select:focus {
   border-radius: inherit;
   background: linear-gradient(90deg, #ff9acb, var(--accent));
   transform-origin: left center;
-  animation: fillBar 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+  animation: fillBar 560ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 .progress.danger span {
@@ -498,6 +596,8 @@ select:focus {
   background: var(--warning);
 }
 
+/* ─── Notice ──────────────────────────────────────────────── */
+
 .notice {
   padding: 12px;
   border-color: rgba(183, 104, 21, 0.45);
@@ -505,13 +605,13 @@ select:focus {
   font-weight: 800;
 }
 
-.report-strip {
-  margin-bottom: 18px;
-}
+/* ─── Bar track ───────────────────────────────────────────── */
 
 .bar-track {
   margin-top: 10px;
 }
+
+/* ─── Empty state ─────────────────────────────────────────── */
 
 .empty-state {
   padding: 24px 16px;
@@ -522,6 +622,8 @@ select:focus {
   margin: 4px 0 0;
   color: var(--muted);
 }
+
+/* ─── Tab bar ─────────────────────────────────────────────── */
 
 .tab-bar {
   position: fixed;
@@ -535,6 +637,7 @@ select:focus {
   padding: 8px 10px calc(env(safe-area-inset-bottom) + 8px);
   border-top: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface) 92%, transparent);
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
 
@@ -546,13 +649,20 @@ select:focus {
   background: transparent;
   color: var(--muted);
   position: relative;
+  /* Override active scale dari rule umum supaya tab tidak berasa "tenggelam" */
+  will-change: color;
+}
+
+.tab:active {
+  transform: scale(0.94);
 }
 
 .tab::after {
   position: absolute;
-  right: 16px;
-  bottom: 2px;
-  left: 16px;
+  right: 10px;
+  /* Turunkan ke tepi bawah tab bar, bukan menempel di teks */
+  bottom: -4px;
+  left: 10px;
   height: 3px;
   border-radius: 999px;
   background: var(--accent);
@@ -560,8 +670,8 @@ select:focus {
   opacity: 0;
   transform: scaleX(0.4);
   transition:
-    opacity 260ms ease,
-    transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    opacity 240ms ease,
+    transform 240ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .tab span {
@@ -588,6 +698,8 @@ select:focus {
   color: #fff;
 }
 
+/* ─── Bottom sheet ────────────────────────────────────────── */
+
 .sheet-backdrop {
   position: fixed;
   inset: 0;
@@ -596,15 +708,19 @@ select:focus {
   align-items: end;
   background: rgba(0, 0, 0, 0.34);
   opacity: 0;
-  transition: opacity 320ms ease;
+  /* Perlu pointer-events agar backdrop bisa diklik walau opacity 0 */
+  pointer-events: none;
+  transition: opacity 280ms ease;
 }
 
 .sheet-backdrop.is-open {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .sheet-backdrop.is-closing {
   opacity: 0;
+  pointer-events: none;
 }
 
 .bottom-sheet {
@@ -613,22 +729,27 @@ select:focus {
   width: min(100%, 520px);
   max-height: min(86svh, 760px);
   margin: 0 auto;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   padding: 10px 16px calc(env(safe-area-inset-bottom) + 18px);
   border-radius: 20px 20px 0 0;
   background: var(--surface);
   box-shadow: var(--shadow);
-  transform: translateY(28px);
-  transition: transform 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Awal: tersembunyi di bawah */
+  transform: translateY(100%);
+  transition: transform 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
 }
 
 .sheet-backdrop.is-open .bottom-sheet {
   transform: translateY(0);
-  animation: sheetRise 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: sheetRise 320ms cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 .sheet-backdrop.is-closing .bottom-sheet {
-  transform: translateY(28px);
+  transform: translateY(100%);
+  transition-duration: 260ms;
 }
 
 .sheet-handle {
@@ -639,19 +760,25 @@ select:focus {
   background: var(--line);
 }
 
+/* ─── Segmented control ───────────────────────────────────── */
+
 .segmented {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   padding: 4px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface-soft);
 }
 
 .segment {
-  border-radius: 6px;
+  border-radius: 7px;
   background: transparent;
   font-weight: 900;
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 120ms ease;
 }
 
 .segment.active {
@@ -659,17 +786,21 @@ select:focus {
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
 }
 
+/* ─── Sheet actions ───────────────────────────────────────── */
+
 .sheet-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  /* Tiga tombol: Hapus | Batal | Simpan — min 90px biar tidak sempit */
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: 10px;
 }
 
 .ghost-button,
 .primary-button,
 .danger-button {
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 900;
+  min-height: 48px;
 }
 
 .ghost-button {
@@ -693,10 +824,13 @@ select:focus {
   display: none;
 }
 
+/* ─── Install nudge ───────────────────────────────────────── */
+
 .install-nudge {
   position: fixed;
   right: 14px;
-  bottom: calc(env(safe-area-inset-bottom) + 88px);
+  /* Tepat di atas tab bar + safe area */
+  bottom: calc(env(safe-area-inset-bottom) + 80px);
   left: 14px;
   z-index: 30;
   display: grid;
@@ -706,10 +840,10 @@ select:focus {
   margin: 0 auto;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
   box-shadow: var(--shadow);
-  animation: itemLiftIn 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: itemLiftIn 360ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
 .install-nudge p {
@@ -723,28 +857,22 @@ select:focus {
   display: none !important;
 }
 
-@keyframes fillBar {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
+/* ─── Reduced motion ──────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 1ms !important;
   }
 
   .tap-pop,
-  .quick-card:active,
   .icon-button:active,
+  .quick-card:active,
   .text-button:active,
   .ghost-button:active,
   .primary-button:active,
@@ -752,22 +880,240 @@ select:focus {
   .segment:active,
   .tiny-action:active,
   .transaction-item:active,
-  .category-item:active {
+  .category-item:active,
+  .tab:active {
     transform: none;
   }
 }
 
-@media (max-width: 390px) {
+/* ─── Layar sangat sempit (≤ 360px) ──────────────────────── */
+/* auto-fit minmax sudah menangani kebanyakan kasus,
+   override ini untuk edge-case iPhone SE lama (320px) */
+@media (max-width: 360px) {
   .summary-grid,
   .quick-row,
-  .filter-row,
   .report-strip,
-  .sheet-actions,
+  .filter-row,
   .settings-actions {
     grid-template-columns: 1fr;
   }
 
   .tab small {
     font-size: 10px;
+  }
+
+  .sheet-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── iPhone 13 — viewport 390×844px ─────────────────────── */
+@media only screen and (min-width: 375px) and (max-width: 430px) {
+
+  .app-shell {
+    padding-left: 16px;
+    padding-right: 16px;
+    /* Ruang bawah: tinggi tab bar ~72px + safe area notch bawah ~34px */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 86px);
+  }
+
+  /* Balance panel: font saldo lebih proporsional di 390px */
+  .balance-panel {
+    padding: 20px;
+    border-radius: 16px;
+  }
+
+  .balance-panel strong {
+    font-size: 38px;
+  }
+
+  /* Summary grid: 2 kolom pas di 390px dengan padding 16px × 2 = 358px konten */
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .summary-grid span {
+    padding: 11px 12px;
+    border-radius: 10px;
+  }
+
+  /* Quick row: 2 kolom, tiap kolom ~(358/2 - 4)px = 175px */
+  .quick-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0 18px;
+  }
+
+  .quick-card {
+    padding: 12px 10px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+
+  .quick-card span {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
+
+  /* Top bar */
+  .top-bar {
+    margin-bottom: 16px;
+  }
+
+  .top-bar h1 {
+    font-size: 28px;
+  }
+
+  /* Section head */
+  .section-head {
+    margin: 18px 0 8px;
+  }
+
+  .section-head h2,
+  .bottom-sheet h2 {
+    font-size: 19px;
+  }
+
+  /* Transaction & category items */
+  .transaction-item,
+  .category-item {
+    padding: 11px 12px;
+    gap: 9px;
+    border-radius: 12px;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+    border-radius: 8px;
+  }
+
+  .item-main strong {
+    font-size: 14px;
+  }
+
+  .item-main span {
+    font-size: 12px;
+  }
+
+  .amount {
+    font-size: 14px;
+  }
+
+  /* Filter stack (history) & filter row tetap full di 390px */
+  .filter-stack,
+  .filter-row {
+    gap: 8px;
+  }
+
+  /* Report strip */
+  .report-strip {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* Budget item */
+  .budget-item {
+    padding: 13px;
+    border-radius: 12px;
+  }
+
+  .budget-edit {
+    grid-template-columns: 1fr 44px;
+    gap: 6px;
+  }
+
+  /* Tab bar: sesuaikan tinggi dan padding */
+  .tab-bar {
+    padding-top: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 6px);
+  }
+
+  .tab {
+    border-radius: 10px;
+  }
+
+  .tab span {
+    font-size: 20px;
+  }
+
+  .tab small {
+    font-size: 10px;
+  }
+
+  .add-tab span {
+    width: 34px;
+    height: 34px;
+  }
+
+  /* Bottom sheet */
+  .bottom-sheet {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 20px);
+    border-radius: 24px 24px 0 0;
+    gap: 13px;
+  }
+
+  /* Input & select */
+  input,
+  select {
+    min-height: 48px;
+    border-radius: 10px;
+  }
+
+  /* Sheet actions: 3 tombol sejajar di 390px */
+  .sheet-actions {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  /* Kalau tombol Hapus hidden, paksa 2 kolom */
+  .sheet-actions:has(> [hidden]:first-child) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ghost-button,
+  .primary-button,
+  .danger-button {
+    min-height: 50px;
+    border-radius: 12px;
+    font-size: 15px;
+  }
+
+  /* Settings actions */
+  .settings-actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* Install nudge */
+  .install-nudge {
+    bottom: calc(env(safe-area-inset-bottom) + 82px);
+    border-radius: 12px;
+  }
+
+  /* Chart item */
+  .chart-item {
+    padding: 13px;
+    border-radius: 12px;
+  }
+
+  /* Notice */
+  .notice {
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  /* Empty state */
+  .empty-state {
+    padding: 22px 16px;
+    border-radius: 12px;
   }
 }

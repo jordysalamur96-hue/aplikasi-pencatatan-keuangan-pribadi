@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#fff6fa" />
+    <!-- theme-color dengan media query untuk light & dark mode -->
+    <meta name="theme-color" content="#fff6fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#171016" media="(prefers-color-scheme: dark)" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Dompetku" />
@@ -13,10 +15,19 @@
     <link rel="apple-touch-icon" href="./icons/icon-180.png" />
     <link rel="icon" href="./icons/icon.svg" type="image/svg+xml" />
     <script>
+      // Terapkan tema sesegera mungkin agar tidak ada flash
       try {
         const theme = localStorage.getItem("dompetku-theme");
-        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
-      } catch (error) {}
+        if (theme === "light" || theme === "dark") {
+          document.documentElement.dataset.theme = theme;
+          // Update theme-color meta sesuai tema yang dipilih user
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function(el) { el.remove(); });
+          var meta = document.createElement("meta");
+          meta.name = "theme-color";
+          meta.content = theme === "dark" ? "#171016" : "#fff6fa";
+          document.head.appendChild(meta);
+        }
+      } catch (e) {}
     </script>
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -27,7 +38,7 @@
           <p class="eyebrow" id="current-period">Bulan ini</p>
           <h1>Dompetku</h1>
         </div>
-        <button class="icon-button" id="settings-button" type="button" aria-label="Buka pengaturan">...</button>
+        <button class="icon-button" id="settings-button" type="button" aria-label="Buka pengaturan">⚙</button>
       </header>
 
       <main class="view-stack" aria-live="polite">
@@ -43,11 +54,11 @@
 
           <section class="quick-row">
             <button class="quick-card" type="button" data-quick-type="expense">
-              <span>-</span>
+              <span aria-hidden="true">-</span>
               Catat pengeluaran
             </button>
             <button class="quick-card" type="button" data-quick-type="income">
-              <span>+</span>
+              <span aria-hidden="true">+</span>
               Catat pemasukan
             </button>
           </section>
@@ -60,7 +71,7 @@
         </section>
 
         <section class="view" data-view="history">
-          <div class="filter-row">
+          <div class="filter-stack">
             <label>
               Bulan
               <input id="history-month" type="month" />
@@ -96,31 +107,32 @@
 
       <nav class="tab-bar" aria-label="Navigasi utama">
         <button class="tab active" type="button" data-tab="home" aria-label="Beranda">
-          <span>⌂</span><small>Beranda</small>
+          <span aria-hidden="true">⌂</span><small>Beranda</small>
         </button>
         <button class="tab add-tab" id="add-button" type="button" aria-label="Tambah transaksi">
-          <span>+</span><small>Tambah</small>
+          <span aria-hidden="true">+</span><small>Tambah</small>
         </button>
         <button class="tab" type="button" data-tab="history" aria-label="Riwayat">
-          <span>≡</span><small>Riwayat</small>
+          <span aria-hidden="true">≡</span><small>Riwayat</small>
         </button>
         <button class="tab" type="button" data-tab="budget" aria-label="Anggaran">
-          <span>◎</span><small>Anggaran</small>
+          <span aria-hidden="true">◎</span><small>Anggaran</small>
         </button>
         <button class="tab" type="button" data-tab="reports" aria-label="Laporan">
-          <span>▥</span><small>Laporan</small>
+          <span aria-hidden="true">▥</span><small>Laporan</small>
         </button>
       </nav>
     </div>
 
     <div class="install-nudge" id="install-nudge" hidden>
       <p>Untuk rasa seperti aplikasi iPhone: buka menu Bagikan Safari, lalu pilih Add to Home Screen.</p>
-      <button class="icon-button" id="install-dismiss" type="button" aria-label="Tutup panduan">x</button>
+      <button class="icon-button" id="install-dismiss" type="button" aria-label="Tutup panduan">✕</button>
     </div>
 
+    <!-- Sheet transaksi: pakai div bukan form di dalam div agar tidak nested form issue -->
     <div class="sheet-backdrop" id="transaction-sheet" hidden>
-      <form class="bottom-sheet" id="transaction-form">
-        <div class="sheet-handle"></div>
+      <form class="bottom-sheet" id="transaction-form" novalidate>
+        <div class="sheet-handle" aria-hidden="true"></div>
         <h2 id="sheet-title">Tambah Transaksi</h2>
         <input id="transaction-id" type="hidden" />
 
@@ -158,8 +170,8 @@
     </div>
 
     <div class="sheet-backdrop" id="category-sheet" hidden>
-      <form class="bottom-sheet" id="category-form">
-        <div class="sheet-handle"></div>
+      <form class="bottom-sheet" id="category-form" novalidate>
+        <div class="sheet-handle" aria-hidden="true"></div>
         <h2>Kelola Kategori</h2>
         <input id="category-id-input" type="hidden" />
         <label>
@@ -188,23 +200,23 @@
 
     <div class="sheet-backdrop" id="settings-sheet" hidden>
       <section class="bottom-sheet">
-        <div class="sheet-handle"></div>
+        <div class="sheet-handle" aria-hidden="true"></div>
         <h2>Pengaturan</h2>
         <label>
           Awal bulan keuangan
-          <input id="month-start-input" type="number" min="1" max="28" />
+          <input id="month-start-input" type="number" min="1" max="28" inputmode="numeric" />
         </label>
         <label>
-          Theme
+          Tema tampilan
           <select id="theme-input">
-            <option value="auto">Otomatis</option>
+            <option value="auto">Otomatis (ikut sistem)</option>
             <option value="light">Light</option>
             <option value="dark">Dark</option>
           </select>
         </label>
         <div class="settings-actions">
           <button class="ghost-button" id="export-json" type="button">Backup JSON</button>
-          <label class="ghost-button file-button">
+          <label class="ghost-button file-button" style="display:grid;place-items:center;">
             Restore JSON
             <input id="import-json" type="file" accept="application/json" />
           </label>
